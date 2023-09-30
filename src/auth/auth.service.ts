@@ -12,8 +12,6 @@ export class AuthService {
         private jwtService: JwtService
         ) {}
 
-
-
     async signupLocal(dto: AuthDto): Promise<Tokens> {
         const hash = await this.hashData(dto.password);
 
