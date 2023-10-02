@@ -5,8 +5,11 @@ import { Tokens } from './types';
 import { AuthGuard } from '@nestjs/passport';
 import { AtGuard, RtGuard } from 'src/common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from 'src/common/decorators';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiBearerAuth()
+@ApiTags('auth')
 export class AuthController {
 
     constructor(private authService: AuthService) {}
