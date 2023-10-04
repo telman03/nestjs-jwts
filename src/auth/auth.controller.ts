@@ -14,6 +14,7 @@ export class AuthController {
 
     constructor(private authService: AuthService) {}
 
+    
     @Public()
     @Post('/local/signup')
     @HttpCode(HttpStatus.CREATED)
