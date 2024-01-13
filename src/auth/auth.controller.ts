@@ -1,11 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpCode, HttpStatus, UseGuards, Param, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
+import { AuthSignUpDto, AuthSignInDto } from './dto';
 import { Tokens } from './types';
 import { AuthGuard } from '@nestjs/passport';
 import { AtGuard, RtGuard } from 'src/common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from 'src/common/decorators';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { NotFoundException } from './exceptions';
+import { UserRole } from '@prisma/client';
 
 @Controller('auth')
 @ApiBearerAuth()
@@ -14,19 +16,20 @@ export class AuthController {
 
     constructor(private authService: AuthService) {}
 
-    
     @Public()
-    @Post('/local/signup')
+    @Post('/signup')
     @HttpCode(HttpStatus.CREATED)
-    signupLocal(@Body() dto: AuthDto): Promise<Tokens> {
+    @ApiBody({ type: AuthSignUpDto })
+    signup(@Body() dto: AuthSignUpDto): Promise<Tokens> {
         return this.authService.signupLocal(dto);
     }
 
     @Public()
-    @Post('/local/signin')
+    @Post('/signin')
+    @ApiBody({ type: AuthSignInDto })
     @HttpCode(HttpStatus.OK)
-    signinLocal(@Body() dto: AuthDto): Promise<Tokens> {
-        return this.authService.signinLocal(dto); 
+    signin(@Body() dto: AuthSignInDto): Promise<Tokens> {
+        return this.authService.signinLocal(dto);
     }
 
     @Post('/logout')
@@ -39,8 +42,17 @@ export class AuthController {
     @UseGuards(RtGuard) // check later
     @Post('/refresh')
     @HttpCode(HttpStatus.OK)
-    refreshTokens(@GetCurrentUserId() userId: number,
-        @GetCurrentUser('refreshToken') refreshToken: string) { 
+    refreshTokens(@GetCurrentUserId() userId: number, @GetCurrentUser('refreshToken') refreshToken: string) { 
         return this.authService.refreshTokens(userId, refreshToken);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('profile')
+    getProfile(@GetCurrentUserId() userId: number, @GetCurrentUser() user: any) {
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        return { id: userId, email: user.email, role: user.role, firstname: user.firstname, lastname: user.lastname };
     }
 }
